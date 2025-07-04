@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="page active">
+        <div class="login-container">
+            <div class="login-box">
+                <h1><i class="fas fa-boxes"></i> Inventory Manager</h1>
+                <p class="welcome-text">Welcome to your personal inventory management system</p>
+                
+                <form id="nameForm">
+                    <div class="form-group">
+                        <label for="userName">Enter your name:</label>
+                        <input type="text" id="userName" name="userName" placeholder="e.g., John Doe" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Start Managing Inventory
+                    </button>
+                    
+
+                </form>
+                
+                <p class="login-note">
+                    Your inventory data will be stored securely in the cloud. An internet connection is required.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardPage" class="page">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-boxes"></i> Inventory Management</h1>
+                <div class="header-right">
+                    <div class="connection-status" id="connectionStatus">
+                        <i class="fas fa-cloud"></i>
+                        <span id="connectionText">Connecting...</span>
+                    </div>
+                    <div class="user-info">
+                        <span id="currentUser">Welcome!</span>
+                        <button id="logoutBtn" class="btn btn-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="dashboard-controls">
+                <button id="addInventoryBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Item
+                </button>
+                <button id="syncBtn" class="btn btn-info" title="Sync with cloud">
+                    <i class="fas fa-sync-alt"></i> Sync
+                </button>
+                <button id="viewHistoryBtn" class="btn btn-secondary">
+                    <i class="fas fa-history"></i> History
+                </button>
+                <div class="search-filter">
+                    <input type="text" id="searchInput" placeholder="Search inventory...">
+                    <label for="typeFilter" class="visually-hidden">Filter by type</label>
+                    <select id="typeFilter" name="typeFilter">
+                            <option value="">All Types</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Tools">Tools</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Other">Other</option>
+                        </select>
+                </div>
+            </div>
+
+            <div class="inventory-stats">
+                <div class="stat-card">
+                    <h3>Total Items</h3>
+                    <span id="totalItems">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Low Stock</h3>
+                    <span id="lowStockItems">0</span>
+                </div>
+            </div>
+
+            <div class="inventory-table-container">
+                <table id="inventoryTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Location</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Inventory items will be dynamically populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Inventory Modal -->
+    <div id="inventoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Item</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="inventoryForm">
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="itemName">Name:</label>
+                        <input type="text" id="itemName" name="itemName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemType">Type:</label>
+                        <select id="itemType" name="itemType" required>
+                            <option value="">Select Type</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Tools">Tools</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemDescription">Description:</label>
+                        <textarea id="itemDescription" name="itemDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemQuantity">Quantity:</label>
+                        <input type="number" id="itemQuantity" name="itemQuantity" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemLocation">Location:</label>
+                        <input type="text" id="itemLocation" name="itemLocation" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemRemarks">Remarks:</label>
+                        <textarea id="itemRemarks" name="itemRemarks" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Save Item</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stock Adjustment Modal -->
+    <div id="stockModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="stockModalTitle">Adjust Stock</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="stockForm">
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="stockItemName">Item:</label>
+                        <input type="text" id="stockItemName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="currentStock">Current Stock:</label>
+                        <input type="number" id="currentStock" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="adjustmentType">Adjustment Type:</label>
+                        <select id="adjustmentType" required>
+                            <option value="">Select Action</option>
+                            <option value="add">Add Stock</option>
+                            <option value="remove">Remove Stock</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="adjustmentQuantity">Quantity:</label>
+                        <input type="number" id="adjustmentQuantity" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adjustmentReason">Reason:</label>
+                        <textarea id="adjustmentReason" rows="2" placeholder="Optional reason for adjustment"></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Update Stock</button>
+                    <button type="button" class="btn btn-secondary" id="cancelStockBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Relocation Modal -->
+    <div id="relocationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="relocationModalTitle">Relocate Item</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="relocationForm">
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="relocationItemName">Item:</label>
+                        <input type="text" id="relocationItemName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="currentLocation">Current Location:</label>
+                        <input type="text" id="currentLocation" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="newLocation">New Location:</label>
+                        <input type="text" id="newLocation" list="existingLocations" required>
+                        <datalist id="existingLocations">
+                            <!-- Will be populated dynamically -->
+                        </datalist>
+                        <small class="form-text">Choose from existing locations or enter a new one</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="relocationReason">Reason:</label>
+                        <textarea id="relocationReason" rows="2" placeholder="Optional reason for relocation"></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Relocate Item</button>
+                    <button type="button" class="btn btn-secondary" id="cancelRelocationBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Transaction History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2>Transaction History</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="form-body">
+                <div class="history-filters">
+                    <div class="form-group">
+                        <label for="historyItemFilter">Filter by Item:</label>
+                        <select id="historyItemFilter">
+                            <option value="">All Items</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="historyActionFilter">Filter by Action:</label>
+                        <select id="historyActionFilter">
+                            <option value="">All Actions</option>
+                            <option value="add">Add Item</option>
+                            <option value="edit">Edit Item</option>
+                            <option value="delete">Delete Item</option>
+                            <option value="stock_add">Add Stock</option>
+                            <option value="stock_remove">Remove Stock</option>
+                            <option value="relocate">Relocate</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="history-table-container">
+                    <table id="historyTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Action</th>
+                                <th>Item</th>
+                                <th>Details</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- Transaction history will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="closeHistoryBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script src="script-supabase-simple.js"></script>
+</body>
+</html>

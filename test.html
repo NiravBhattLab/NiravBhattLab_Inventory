@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="test-area">
+        <h1>JavaScript Test</h1>
+        <button onclick="testConnectivity()">Test Supabase Connection</button>
+        <button onclick="testFormSubmission()">Test Form Submission</button>
+        <div id="test-results"></div>
+        
+        <!-- Test form -->
+        <form id="testForm">
+            <input type="text" name="testField" value="test value" required>
+            <button type="submit">Submit Test Form</button>
+        </form>
+    </div>
+
+    <script>
+        // Test basic JavaScript functionality
+        console.log('Test page loaded');
+        
+        // Supabase setup
+        const SUPABASE_CONFIG = {
+            url: 'https://bhaexzjmspamqxcszkgm.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoYWV4emptc3BhbXF4Y3N6a2dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjQ3MjEsImV4cCI6MjA2NzE0MDcyMX0.vCYNKtOp6phSWEK36XYNqL6DznS5pw_49QduBfUvckk'
+        };
+        const supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+        
+        async function testConnectivity() {
+            console.log('Testing Supabase connectivity...');
+            const results = document.getElementById('test-results');
+            
+            try {
+                const { data, error } = await supabase.from('inventory').select('*').limit(1);
+                if (error) {
+                    results.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                } else {
+                    results.innerHTML = `<p style="color: green;">Supabase connected successfully! Data: ${JSON.stringify(data)}</p>`;
+                }
+            } catch (e) {
+                results.innerHTML = `<p style="color: red;">Exception: ${e.message}</p>`;
+            }
+        }
+        
+        function testFormSubmission() {
+            console.log('Testing form submission...');
+            const form = document.getElementById('testForm');
+            const formData = new FormData(form);
+            console.log('Form data:', formData.get('testField'));
+            document.getElementById('test-results').innerHTML = `<p style="color: blue;">Form test successful. Value: ${formData.get('testField')}</p>`;
+        }
+        
+        // Set up form event listener
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Form submit event triggered');
+            testFormSubmission();
+        });
+        
+        console.log('Test page setup complete');
+    </script>
+</body>
+</html>

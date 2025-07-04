@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Simple Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="loginPage" class="page active">
+        <h1>Login</h1>
+        <button onclick="simpleLogin()">Login as Test User</button>
+    </div>
+
+    <div id="dashboardPage" class="page">
+        <div class="header">
+            <h1>Inventory Management</h1>
+            <div id="currentUser">Welcome!</div>
+        </div>
+        
+        <div class="dashboard-actions">
+            <button onclick="showAddInventoryModal()" class="btn btn-primary">Add Inventory</button>
+            <button onclick="testSaveItem()" class="btn btn-secondary">Test Save Function</button>
+        </div>
+        
+        <div id="inventory-list">
+            <p>Inventory items will appear here...</p>
+        </div>
+    </div>
+
+    <!-- Add/Edit Inventory Modal -->
+    <div id="inventoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Item</h2>
+                <span class="close" onclick="closeModal('inventoryModal')">&times;</span>
+            </div>
+            <form id="inventoryForm">
+                <div class="form-group">
+                    <label for="itemName">Name:</label>
+                    <input type="text" id="itemName" name="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemType">Type:</label>
+                    <select id="itemType" name="itemType" required>
+                        <option value="">Select Type</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Office Supplies">Office Supplies</option>
+                        <option value="Tools">Tools</option>
+                        <option value="Materials">Materials</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemDescription">Description:</label>
+                    <textarea id="itemDescription" name="itemDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="itemQuantity">Quantity:</label>
+                    <input type="number" id="itemQuantity" name="itemQuantity" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemLocation">Location:</label>
+                    <input type="text" id="itemLocation" name="itemLocation" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemRemarks">Remarks:</label>
+                    <textarea id="itemRemarks" name="itemRemarks" rows="2"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Save Item</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('inventoryModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script-simple-test.js"></script>
+
+    <style>
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .modal-actions {
+            text-align: right;
+            margin-top: 20px;
+        }
+        
+        .close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>
