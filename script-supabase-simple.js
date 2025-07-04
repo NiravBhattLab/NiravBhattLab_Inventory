@@ -264,11 +264,10 @@ async function loadInventoryData() {
         
         console.log('Loading inventory for user:', currentUser.id);
         
-        // Load inventory items for current user from Supabase
+        // Load all inventory items from Supabase (no user filter)
         const { data: inventoryData, error: invError } = await supabase
             .from('inventory')
             .select('*')
-            .eq('created_by', currentUser.name)
             .order('last_updated', { ascending: false });
         
         if (invError) {
@@ -278,11 +277,10 @@ async function loadInventoryData() {
         
         console.log('Loaded inventory items:', inventoryData?.length || 0);
         
-        // Load transaction history for current user
+        // Load all transaction history
         const { data: historyData, error: histError } = await supabase
             .from('transaction_history')
             .select('*')
-            .eq('user_name', currentUser.name)
             .order('timestamp', { ascending: false })
             .limit(1000);
         
@@ -649,8 +647,7 @@ async function saveInventoryItem(formData) {
             const { error } = await supabase
                 .from('inventory')
                 .update(itemData)
-                .eq('item_id', currentEditItemId)
-                .eq('created_by', currentUser.name);
+                .eq('item_id', currentEditItemId);
             
             if (error) {
                 throw new Error(`Failed to update item: ${error.message}`);
@@ -783,7 +780,6 @@ async function deleteItem(itemId) {
             .from('inventory')
             .delete()
             .eq('item_id', itemId)
-            .eq('created_by', currentUser.name)
             .select(); // Add select to see what was deleted
         
         console.log('Supabase delete result:', { data, error });
@@ -897,8 +893,7 @@ async function adjustStock(formData) {
                 last_updated: new Date().toISOString(),
                 last_updated_by: currentUser.name
             })
-            .eq('item_id', currentStockItemId)
-            .eq('created_by', currentUser.name);
+            .eq('item_id', currentStockItemId);
         
         if (error) {
             throw new Error(`Failed to update stock: ${error.message}`);
@@ -1300,8 +1295,7 @@ async function processRelocation(formData) {
                 last_updated: new Date().toISOString(),
                 last_updated_by: currentUser.name
             })
-            .eq('item_id', itemId)
-            .eq('created_by', currentUser.name);
+            .eq('item_id', itemId);
         
         if (error) {
             throw new Error(`Failed to update location: ${error.message}`);
