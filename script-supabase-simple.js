@@ -400,9 +400,6 @@ function updateInventoryDisplay() {
                     <button class="btn btn-sm btn-info" onclick="relocateItem('${item.item_id}')" title="Relocate">
                         <i class="fas fa-map-marker-alt"></i>
                     </button>
-                    <button class="btn btn-sm btn-primary" onclick="editItem('${item.item_id}')" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
                     <button class="btn btn-sm btn-danger" onclick="deleteItem('${item.item_id}')" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -554,9 +551,6 @@ function displayFilteredInventory(filteredInventory) {
                     </button>
                     <button class="btn btn-sm btn-info" onclick="relocateItem('${item.item_id}')" title="Relocate">
                         <i class="fas fa-map-marker-alt"></i>
-                    </button>
-                    <button class="btn btn-sm btn-primary" onclick="editItem('${item.item_id}')" title="Edit">
-                        <i class="fas fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-danger" onclick="deleteItem('${item.item_id}')" title="Delete">
                         <i class="fas fa-trash"></i>
@@ -1399,7 +1393,7 @@ function updateTransactionHistory() {
     if (filteredHistory.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="empty-state">
+                <td colspan="6" class="empty-state">
                     <i class="fas fa-history"></i>
                     <h3>No transaction history</h3>
                     <p>No records match your filter criteria</p>
@@ -1453,6 +1447,16 @@ function updateTransactionHistory() {
             details += ` (${record.remarks})`;
         }
         
+        // Find the current item in inventory
+        const itemInInventory = inventory.find(item => item.item === record.item);
+        const itemId = itemInInventory ? itemInInventory.item_id : '';
+        
+        // Only show edit button if item exists in inventory
+        const editButton = itemInInventory ? 
+            `<button class="btn btn-sm btn-primary" onclick="editItem('${itemId}')" title="Edit Item">
+                <i class="fas fa-edit"></i>
+            </button>` : '';
+        
         return `
             <tr>
                 <td>${new Date(record.timestamp).toLocaleString()}</td>
@@ -1460,6 +1464,9 @@ function updateTransactionHistory() {
                 <td>${record.item}</td>
                 <td>${details}</td>
                 <td>${record.user_name}</td>
+                <td class="actions">
+                    ${editButton}
+                </td>
             </tr>
         `;
     }).join('');
