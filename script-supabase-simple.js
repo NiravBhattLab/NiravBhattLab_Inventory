@@ -19,6 +19,23 @@ let currentRelocationItemId = null;
 // Initialize the application
 window.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing app...');
+    // Check for saved user session
+    const savedUser = localStorage.getItem('ims_user');
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            console.log('Restored user session:', currentUser);
+            showDashboard();
+            updateConnectionStatus('connected');
+            loadInventoryData();
+            // Do NOT call initializeApp if session is restored
+            return;
+        } catch (e) {
+            console.warn('Failed to parse saved user session:', e);
+            localStorage.removeItem('ims_user');
+        }
+    }
+    // Only call initializeApp if no session
     initializeApp();
 });
 
@@ -35,8 +52,14 @@ async function initializeApp() {
     const isConnected = await checkSupabaseConnection();
     console.log('Connection result:', isConnected);
     
-    // Always show login page - connection issues won't block login
-    showLoginPage();
+    // Only show login page if not already logged in
+    if (!currentUser) {
+        showLoginPage();
+    } else {
+        showDashboard();
+        updateConnectionStatus('connected');
+        // DO NOT call loadInventoryData here, it is already called in DOMContentLoaded if session is restored
+    }
     
     setupEventListeners();
     setupModalEventListeners();
@@ -210,9 +233,7 @@ function closeModal(modalId) {
 // Authentication Functions
 async function handleNameSubmit(e) {
     e.preventDefault();
-    
     const userName = document.getElementById('userName').value.trim();
-    
     if (userName) {
         console.log('Attempting login for:', userName);
         
@@ -224,6 +245,8 @@ async function handleNameSubmit(e) {
             id: userId,
             loginTime: new Date().toISOString()
         };
+        // Save session
+        localStorage.setItem('ims_user', JSON.stringify(currentUser));
         
         console.log('User logged in:', currentUser);
         showNotification(`Welcome, ${userName}!`, 'success');
@@ -246,6 +269,8 @@ async function handleNameSubmit(e) {
 function handleLogout() {
     // Clear user data from memory only
     currentUser = null;
+    // Clear session
+    localStorage.removeItem('ims_user');
     
     // Clear inventory data from memory
     clearInventoryData();
@@ -842,11 +867,19 @@ async function adjustStock(formData) {
         showNotification('Invalid operation or user not logged in', 'error');
         return;
     }
+    // Prevent double submission
+    if (window.isSubmittingStock) {
+        console.log('Stock adjustment already in progress, preventing duplicate');
+        return;
+    }
+    window.isSubmittingStock = true;
+    setTimeout(() => { window.isSubmittingStock = false; }, 5000); // Reset after 5 seconds
     
     // Check connection first
     const isConnected = await checkSupabaseConnection();
     if (!isConnected) {
         showNotification('No internet connection. Please check your connection and try again.', 'error');
+        window.isSubmittingStock = false;
         return;
     }
     
@@ -908,17 +941,19 @@ async function adjustStock(formData) {
             quantity: newQuantity,
             location: item.location,
             user_name: currentUser.name,
-            remarks: reason || `Stock ${adjustmentType}ed`
+            remarks: reason || `Stock ${adjustmentType}`
         });
         
         updateInventoryDisplay();
         updateStats();
         closeModal('stockModal');
-        showNotification(`Stock ${adjustmentType}ed successfully`, 'success');
+        showNotification(`Stock ${adjustmentType} successful`, 'success');
         
     } catch (error) {
         console.error('Stock adjustment error:', error);
         showNotification(error.message || 'Failed to adjust stock', 'error');
+    } finally {
+        window.isSubmittingStock = false;
     }
 }
 
@@ -1262,7 +1297,9 @@ async function processRelocation(formData) {
         const itemId = window.currentRelocationItemId;
         let newLocation = formData.get('newLocation');
         const reason = formData.get('relocationReason');
-        
+
+        // Trim newLocation before checking
+        newLocation = newLocation ? newLocation.trim() : '';
         if (!newLocation) {
             throw new Error('Please enter a new location');
         }
@@ -1368,7 +1405,8 @@ function populateHistoryFilters() {
 function updateTransactionHistory() {
     const tbody = document.getElementById('historyTableBody');
     if (!tbody) return;
-    
+    // Clear the table before rendering
+    tbody.innerHTML = '';
     const itemFilter = document.getElementById('historyItemFilter').value;
     const actionFilter = document.getElementById('historyActionFilter').value;
     
