@@ -6,9 +6,103 @@
     <title>Inventory Management System</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="manifest" href="/Teamskrn-inventory/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     
     <!-- Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+/* ID column */
+.inventory-table-container table td:nth-child(1),
+.inventory-table-container table th:nth-child(1) {
+    max-width: 140px;
+    min-width: 60px;
+    width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Name column */
+.inventory-table-container table td:nth-child(2),
+.inventory-table-container table th:nth-child(2) {
+    max-width: 180px;
+    min-width: 150px;
+    width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Type column */
+.inventory-table-container table td:nth-child(3),
+.inventory-table-container table th:nth-child(3) {
+    max-width: 120px;
+    min-width: 80px;
+    width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Description column */
+.inventory-table-container table td:nth-child(4),
+.inventory-table-container table th:nth-child(4) {
+    max-width: 240px;
+    min-width: 120px;
+    width: 240px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+}
+/* Quantity column */
+.inventory-table-container table td:nth-child(5),
+.inventory-table-container table th:nth-child(5) {
+    max-width: 100px;
+    min-width: 60px;
+    width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+/* Location column */
+.inventory-table-container table td:nth-child(6),
+.inventory-table-container table th:nth-child(6) {
+    max-width: 100px;
+    min-width: 80px;
+    width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+/* Last Updated column */
+.inventory-table-container table td:nth-child(7),
+.inventory-table-container table th:nth-child(7) {
+    max-width: 120px;
+    min-width: 100px;
+    width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+/* Actions column */
+.inventory-table-container table td:nth-child(8),
+.inventory-table-container table th:nth-child(8) {
+    max-width: 120px;
+    min-width: 80px;
+    width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+/* Ensure the table is scrollable horizontally on small screens */
+.inventory-table-container {
+    overflow-x: auto;
+}
+</style>
 </head>
 <body>
     <!-- Login Page -->
@@ -16,6 +110,8 @@
         <div class="login-container">
             <div class="login-box">
                 <h1><i class="fas fa-boxes"></i> Team SKRN - Inventory Manager</h1>
+                <!-- Install PWA Button -->
+                <button id="install-button" class="install-btn" onclick="installPWA()">Install App</button>
                 <p class="welcome-text">Note: <br>
                     1. Add every New Item with a unique name.<br>
                     2. Use the search bar to quickly find items.<br>
@@ -107,14 +203,14 @@
                 <table id="inventoryTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Quantity</th>
-                            <th>Location</th>
-                            <th>Last Updated</th>
-                            <th>Actions</th>
+                            <th><center>ID</center></th>
+                            <th><center>Name</center></th>
+                            <th><center>Type</center></th>
+                            <th><center>Description</center></th>
+                            <th><center>Quantity</center></th>
+                            <th><center>Location</center></th>
+                            <th><center>Last Updated</center></th>
+                            <th><center>Actions</center></th>
                         </tr>
                     </thead>
                     <tbody id="inventoryTableBody">
@@ -308,9 +404,134 @@
         </div>
     </div>
 
+    <!-- Description Modal for Read More -->
+    <div id="descriptionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Item Description</h2>
+                <span class="close" id="closeDescriptionModal">&times;</span>
+            </div>
+            <div class="form-body">
+                <p id="fullDescriptionText"></p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        // ✅ Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/Teamskrn-inventory/service-worker.js')
+                .then((reg) => {
+                    console.log("Service Worker Registered");
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdateNotification();
+                            }
+                        };
+                    };
+                }).catch((err) => console.error("Service Worker Registration Failed", err));
+        }
+
+        // ✅ Show update notification
+        function showUpdateNotification() {
+            let updateBanner = document.createElement("div");
+            updateBanner.className = "update-banner";
+            updateBanner.innerHTML = `New version available! <button onclick="window.location.reload()">Update</button>`;
+            document.body.appendChild(updateBanner);
+        }
+
+        // ✅ Handle PWA Install Button
+        let deferredPrompt;
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById("install-button").style.display = "block";
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === "accepted") {
+                        console.log("PWA Installed");
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        // ✅ Force Update Check on Load
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.getRegistration().then((reg) => {
+                if (reg) reg.update();
+            });
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+
     <!-- Notification Container -->
     <div id="notificationContainer" class="notification-container"></div>
 
     <script src="script-supabase-simple.js"></script>
+    <script>
+// Description truncation and Read More logic
+function truncateDescription(desc, maxLength = 50) {
+    if (!desc) return '';
+    if (desc.length <= maxLength) return desc;
+    return desc.substring(0, maxLength) + '... <a href="#" class="read-more-link">Read more</a>';
+}
+
+// Render inventory table rows with truncation and data-full-desc
+function renderInventoryTable(items) {
+    const tbody = document.getElementById('inventoryTableBody');
+    tbody.innerHTML = '';
+    items.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.id || ''}</td>
+            <td>${item.name || ''}</td>
+            <td>${item.type || ''}</td>
+            <td data-full-desc="${item.description ? item.description.replace(/&/g, '&amp;').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''}">${truncateDescription(item.description)}</td>
+            <td>${item.quantity != null ? item.quantity : ''}</td>
+            <td>${item.location || ''}</td>
+            <td>${item.last_updated || ''}</td>
+            <td>${item.actions || ''}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Delegate event for Read More links
+function setupReadMoreHandler() {
+    document.getElementById('inventoryTableBody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('read-more-link')) {
+            e.preventDefault();
+            const fullDesc = e.target.closest('td').getAttribute('data-full-desc');
+            document.getElementById('fullDescriptionText').textContent = fullDesc;
+            document.getElementById('descriptionModal').style.display = 'block';
+        }
+    });
+    document.getElementById('closeDescriptionModal').onclick = function() {
+        document.getElementById('descriptionModal').style.display = 'none';
+    };
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('descriptionModal')) {
+            document.getElementById('descriptionModal').style.display = 'none';
+        }
+    };
+}
+
+// Call this after populating the inventory table
+if (document.readyState !== 'loading') setupReadMoreHandler();
+else document.addEventListener('DOMContentLoaded', setupReadMoreHandler);
+
+// Patch: If script-supabase-simple.js already renders the table, override it to use our function
+window.renderInventoryTable = renderInventoryTable;
+</script>
 </body>
 </html>
