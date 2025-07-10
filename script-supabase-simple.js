@@ -194,6 +194,15 @@ function setupModalEventListeners() {
     document.getElementById('historyItemFilter')?.addEventListener('change', updateTransactionHistory);
     document.getElementById('historyActionFilter')?.addEventListener('change', updateTransactionHistory);
     
+    // Item Details modal
+    document.getElementById('closeItemDetailsBtn')?.addEventListener('click', () => {
+        closeModal('itemDetailsModal');
+    });
+    
+    document.getElementById('closeItemDetailsModal')?.addEventListener('click', () => {
+        closeModal('itemDetailsModal');
+    });
+    
     // Close modal when clicking the X or outside the modal
     document.querySelectorAll('.modal .close').forEach(closeBtn => {
         closeBtn.addEventListener('click', (e) => {
@@ -408,7 +417,7 @@ function updateInventoryDisplay() {
         const isLowStock = item.quantity <= 5;
         return `
             <tr>
-                <td><span class="item-id">${item.item_id}</span></td>
+                <td><span class="item-id clickable" onclick="showItemDetails('${item.item_id}')" title="Click to view details">${item.item_id}</span></td>
                 <td>${item.item}</td>
                 <td>${item.type}</td>
                 <td>${item.description || '-'}</td>
@@ -560,7 +569,7 @@ function displayFilteredInventory(filteredInventory) {
         const isLowStock = item.quantity <= 5;
         return `
             <tr>
-                <td><span class="item-id">${item.item_id}</span></td>
+                <td><span class="item-id clickable" onclick="showItemDetails('${item.item_id}')" title="Click to view details">${item.item_id}</span></td>
                 <td>${item.item}</td>
                 <td>${item.type}</td>
                 <td>${item.description || '-'}</td>
@@ -764,6 +773,8 @@ async function saveInventoryItem(formData) {
 }
 
 function editItem(itemId) {
+    // Close the history modal if it's open
+    closeModal('historyModal');
     showEditInventoryModal(itemId);
 }
 
@@ -1508,6 +1519,97 @@ function updateTransactionHistory() {
             </tr>
         `;
     }).join('');
+}
+
+// Item Details Modal Functions
+function showItemDetails(itemId) {
+    const item = inventory.find(inv => inv.item_id === itemId);
+    if (!item) {
+        showNotification('Item not found', 'error');
+        return;
+    }
+    
+    // Populate the modal with item data
+    document.getElementById('itemDetailsTitle').textContent = `Item Details - ${item.item}`;
+    document.getElementById('detailItemId').textContent = item.item_id;
+    document.getElementById('detailItemName').textContent = item.item;
+    document.getElementById('detailItemType').textContent = item.type;
+    
+    // Set quantity with low stock indicator
+    const quantityElement = document.getElementById('detailItemQuantity');
+    quantityElement.textContent = item.quantity;
+    if (item.quantity <= 5) {
+        quantityElement.classList.add('low-stock');
+    } else {
+        quantityElement.classList.remove('low-stock');
+    }
+    
+    document.getElementById('detailItemLocation').textContent = item.location;
+    document.getElementById('detailItemDescription').textContent = item.description || 'No description provided';
+    document.getElementById('detailItemRemarks').textContent = item.remarks || 'No remarks';
+    
+    // Format dates
+    const createdDate = item.created_date ? new Date(item.created_date).toLocaleString() : 'Not available';
+    const lastUpdated = item.last_updated ? new Date(item.last_updated).toLocaleString() : 'Not available';
+    
+    document.getElementById('detailCreatedDate').textContent = createdDate;
+    document.getElementById('detailLastUpdated').textContent = lastUpdated;
+    document.getElementById('detailCreatedBy').textContent = item.created_by || 'Unknown';
+    document.getElementById('detailLastUpdatedBy').textContent = item.last_updated_by || 'Unknown';
+    
+    // Set up action buttons
+    setupItemDetailsActions(itemId);
+    
+    // Show the modal
+    document.getElementById('itemDetailsModal').style.display = 'block';
+}
+
+function setupItemDetailsActions(itemId) {
+    // Clear any existing event listeners by cloning elements
+    const editBtn = document.getElementById('detailEditBtn');
+    const addStockBtn = document.getElementById('detailAddStockBtn');
+    const removeStockBtn = document.getElementById('detailRemoveStockBtn');
+    const relocateBtn = document.getElementById('detailRelocateBtn');
+    const deleteBtn = document.getElementById('detailDeleteBtn');
+    
+    // Clone to remove old event listeners
+    const newEditBtn = editBtn.cloneNode(true);
+    const newAddStockBtn = addStockBtn.cloneNode(true);
+    const newRemoveStockBtn = removeStockBtn.cloneNode(true);
+    const newRelocateBtn = relocateBtn.cloneNode(true);
+    const newDeleteBtn = deleteBtn.cloneNode(true);
+    
+    editBtn.parentNode.replaceChild(newEditBtn, editBtn);
+    addStockBtn.parentNode.replaceChild(newAddStockBtn, addStockBtn);
+    removeStockBtn.parentNode.replaceChild(newRemoveStockBtn, removeStockBtn);
+    relocateBtn.parentNode.replaceChild(newRelocateBtn, relocateBtn);
+    deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+    
+    // Add new event listeners
+    newEditBtn.onclick = () => {
+        closeModal('itemDetailsModal');
+        editItem(itemId);
+    };
+    
+    newAddStockBtn.onclick = () => {
+        closeModal('itemDetailsModal');
+        addStock(itemId);
+    };
+    
+    newRemoveStockBtn.onclick = () => {
+        closeModal('itemDetailsModal');
+        takeStock(itemId);
+    };
+    
+    newRelocateBtn.onclick = () => {
+        closeModal('itemDetailsModal');
+        relocateItem(itemId);
+    };
+    
+    newDeleteBtn.onclick = () => {
+        closeModal('itemDetailsModal');
+        deleteItem(itemId);
+    };
 }
 
 // Backup form login handler
