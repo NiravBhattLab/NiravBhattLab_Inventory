@@ -16,6 +16,221 @@ let isEditMode = false;
 let currentEditItemId = null;
 let currentStockItemId = null;
 let currentRelocationItemId = null;
+
+// Wishlist variables
+let wishlist = [];
+let currentWishlistEditId = null;
+
+// Wishlist Event Listeners
+function setupWishlistEventListeners() {
+    // Open wishlist modal button
+    const wishlistBtn = document.getElementById('openWishlistBtn');
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', showWishlistModal);
+    }
+
+    // Wishlist form submit
+    const wishlistForm = document.getElementById('wishlistForm');
+    if (wishlistForm) {
+        wishlistForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveWishlistItem(new FormData(wishlistForm));
+        });
+    }
+
+    // Cancel button
+    const cancelWishlistBtn = document.getElementById('cancelWishlistBtn');
+    if (cancelWishlistBtn) {
+        cancelWishlistBtn.addEventListener('click', () => closeModal('wishlistModal'));
+    }
+
+    // Close modal on X or outside
+    const wishlistModal = document.getElementById('wishlistModal');
+    if (wishlistModal) {
+        wishlistModal.querySelector('.close')?.addEventListener('click', () => closeModal('wishlistModal'));
+        wishlistModal.addEventListener('click', (e) => {
+            if (e.target === wishlistModal) closeModal('wishlistModal');
+        });
+    }
+}
+
+// Show wishlist modal and load data
+function showWishlistModal() {
+    loadWishlistData();
+    document.getElementById('wishlistForm')?.reset();
+    document.getElementById('wishlistModal').style.display = 'block';
+}
+
+// Load wishlist from Supabase
+async function loadWishlistData() {
+    if (!currentUser) return;
+    try {
+        const { data, error } = await supabase
+            .from('wishlist')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        wishlist = data || [];
+        updateWishlistDisplay();
+    } catch (error) {
+        console.error('Failed to load wishlist:', error);
+        wishlist = [];
+        updateWishlistDisplay();
+    }
+}
+
+// Display wishlist items in modal
+function updateWishlistDisplay() {
+    const tbody = document.getElementById('wishlistTableBody');
+    if (!tbody) return;
+    if (!wishlist || wishlist.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-heart"></i><h3>No wishlist items</h3><p>Add your first wish!</p></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = wishlist.map(item => `
+        <tr>
+            <td>${item.product_name}</td>
+            <td>${item.quantity}</td>
+            <td>${item.purpose}</td>
+            <td>${item.product_link ? `<a href="${item.product_link}" target="_blank">Link</a>` : '-'}</td>
+            <td>${item.user_name}</td>
+            <td>${item.created_at ? new Date(item.created_at).toLocaleString() : '-'}</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="migrateWishlistToInventory('${item.id}')" title="Migrate to Inventory"><i class="fas fa-arrow-right"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteWishlistItem('${item.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+// Migrate wishlist item to inventory
+async function migrateWishlistToInventory(wishlistId) {
+    // Ensure wishlist is up-to-date and id types match
+    let wish = wishlist.find(w => String(w.id) === String(wishlistId));
+    if (!wish) {
+        // Try reloading wishlist in case it's stale
+        await loadWishlistData();
+        wish = wishlist.find(w => String(w.id) === String(wishlistId));
+        if (!wish) {
+            showNotification('Wishlist item not found', 'error');
+            return;
+        }
+    }
+    // Check if an inventory item with the same name exists
+    const existingItem = inventory.find(inv => inv.item.trim().toLowerCase() === wish.product_name.trim().toLowerCase());
+    if (existingItem) {
+        // Add stock instead of creating new item
+        closeModal('wishlistModal');
+        setTimeout(() => {
+            showStockModal(existingItem.item_id, 'add');
+            document.getElementById('adjustmentQuantity').value = wish.quantity;
+            document.getElementById('adjustmentReason').value = `Migrated from wishlist${wish.product_link ? ' | Link: ' + wish.product_link : ''}`;
+            // Attach a one-time event to handle post-add deletion
+            const stockForm = document.getElementById('stockForm');
+            if (!stockForm) return;
+            const handler = async (e) => {
+                setTimeout(async () => {
+                    await deleteWishlistItem(wish.id);
+                }, 500);
+                stockForm.removeEventListener('submit', handler);
+            };
+            stockForm.addEventListener('submit', handler);
+        }, 300);
+    } else {
+        // Prefill inventory modal with wishlist data (original behavior)
+        closeModal('wishlistModal');
+        setTimeout(() => {
+            document.getElementById('modalTitle').textContent = 'Add New Item';
+            document.getElementById('inventoryForm').reset();
+            document.getElementById('itemName').value = wish.product_name;
+            document.getElementById('itemQuantity').value = wish.quantity;
+            document.getElementById('itemDescription').value = wish.purpose;
+            document.getElementById('itemRemarks').value = `Migrated from wishlist${wish.product_link ? ' | Link: ' + wish.product_link : ''}`;
+            document.getElementById('inventoryModal').style.display = 'block';
+            // Attach a one-time event to handle post-add deletion
+            const inventoryForm = document.getElementById('inventoryForm');
+            if (!inventoryForm) return;
+            const handler = async (e) => {
+                setTimeout(async () => {
+                    await deleteWishlistItem(wish.id);
+                }, 500);
+                inventoryForm.removeEventListener('submit', handler);
+            };
+            inventoryForm.addEventListener('submit', handler);
+        }, 300);
+    }
+}
+
+// Add to Wishlist from Inventory (must be global)
+window.addToWishlistFromInventory = async function(itemId) {
+    const item = inventory.find(inv => inv.item_id === itemId);
+    if (!item) {
+        showNotification('Item not found', 'error');
+        return;
+    }
+    // Open wishlist modal prefilled with item name and quantity 1
+    document.getElementById('wishlistForm').reset();
+    document.getElementById('wishlistProductName').value = item.item;
+    document.getElementById('wishlistQuantity').value = 1;
+    document.getElementById('wishlistPurpose').value = item.description || '';
+    document.getElementById('wishlistProductLink').value = '';
+    document.getElementById('wishlistModal').style.display = 'block';
+};
+
+// Expose migrateWishlistToInventory globally for inline onclick
+window.migrateWishlistToInventory = migrateWishlistToInventory;
+}
+
+// Save wishlist item (add)
+async function saveWishlistItem(formData) {
+    if (!currentUser) {
+        showNotification('You must be logged in to add to wishlist', 'error');
+        return;
+    }
+    const product_name = formData.get('wishlistProductName')?.trim();
+    const quantity = parseInt(formData.get('wishlistQuantity'));
+    const purpose = formData.get('wishlistPurpose')?.trim();
+    const product_link = formData.get('wishlistProductLink')?.trim();
+    const user_name = currentUser.name;
+    if (!product_name || !purpose || !quantity || quantity < 1) {
+        showNotification('Please fill all required fields', 'warning');
+        return;
+    }
+    try {
+        const wish = {
+            product_name,
+            quantity,
+            purpose,
+            product_link,
+            user_name,
+            created_at: new Date().toISOString()
+        };
+        const { error } = await supabase.from('wishlist').insert([wish]);
+        if (error) throw error;
+        showNotification('Wish added!', 'success');
+        await loadWishlistData();
+        closeModal('wishlistModal');
+    } catch (error) {
+        console.error('Failed to add wish:', error);
+        showNotification('Failed to add wish', 'error');
+    }
+}
+
+// Delete wishlist item
+async function deleteWishlistItem(id) {
+    if (!currentUser) {
+        showNotification('You must be logged in to delete wishlist items', 'error');
+        return;
+    }
+    if (!confirm('Delete this wish?')) return;
+    try {
+        const { error } = await supabase.from('wishlist').delete().eq('id', id);
+        if (error) throw error;
+        showNotification('Wish deleted', 'success');
+        await loadWishlistData();
+    } catch (error) {
+        console.error('Failed to delete wish:', error);
+        showNotification('Failed to delete wish', 'error');
+    }
+}
 // Initialize the application
 window.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing app...');
@@ -28,6 +243,8 @@ window.addEventListener('DOMContentLoaded', () => {
             showDashboard();
             updateConnectionStatus('connected');
             loadInventoryData();
+            setupWishlistEventListeners();
+            loadWishlistData();
             // Do NOT call initializeApp if session is restored
             return;
         } catch (e) {
@@ -37,6 +254,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     // Only call initializeApp if no session
     initializeApp();
+    setupWishlistEventListeners();
 });
 
 async function initializeApp() {
@@ -437,6 +655,9 @@ function updateInventoryDisplay() {
                     <button class="btn btn-sm btn-danger" onclick="deleteItem('${item.item_id}')" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="addToWishlistFromInventory('${item.item_id}')" title="Add to Wishlist">
+                        <i class="fas fa-heart"></i>
+                    </button>
                 </td>
             </tr>
         `;
@@ -588,6 +809,9 @@ function displayFilteredInventory(filteredInventory) {
                     </button>
                     <button class="btn btn-sm btn-danger" onclick="deleteItem('${item.item_id}')" title="Delete">
                         <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="addToWishlistFromInventory('${item.item_id}')" title="Add to Wishlist">
+                        <i class="fas fa-heart"></i>
                     </button>
                 </td>
             </tr>
