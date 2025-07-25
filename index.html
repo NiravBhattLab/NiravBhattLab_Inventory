@@ -17,13 +17,13 @@
   position: fixed !important;
   z-index: 9999 !important;
   left: 0; top: 0; width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.4);
+  background: var(--modal-bg);
 }
 #wishlistModal[style*="display: block"] {
   display: block !important;
 }
 #wishlistModal .modal-content, #wishlistModal .modal-content.modal-lg {
-  background: #fff;
+  background: var(--modal-content-bg);
   border-radius: 10px;
   margin: 5% auto;
   max-width: 600px;
@@ -123,14 +123,14 @@
 
 /* Clickable Item ID Styles */
 .item-id.clickable {
-    color: #667eea;
+    color: var(--primary-color);
     cursor: pointer;
     text-decoration: underline;
     transition: color 0.2s ease;
 }
 
 .item-id.clickable:hover {
-    color: #5a67d8;
+    color: var(--primary-color);
     font-weight: bold;
 }
 
@@ -148,14 +148,14 @@
 }
 
 .detail-section {
-    background: #f8f9fa;
+    background: var(--bg-secondary);
     border-radius: 12px;
     padding: 20px;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid var(--primary-color);
 }
 
 .detail-section h3 {
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 15px;
     font-size: 1.1rem;
     display: flex;
@@ -164,7 +164,7 @@
 }
 
 .detail-section h3 i {
-    color: #667eea;
+    color: var(--primary-color);
 }
 
 .detail-item {
@@ -179,7 +179,7 @@
 
 .detail-item label {
     font-weight: 600;
-    color: #555;
+    color: var(--text-secondary);
     min-width: 140px;
     margin-right: 10px;
 }
@@ -189,22 +189,22 @@
 }
 
 .detail-value {
-    color: #333;
+    color: var(--text-primary);
     word-wrap: break-word;
     flex: 1;
 }
 
 .description-text {
-    background: white;
+    background: var(--input-background);
     padding: 10px;
     border-radius: 6px;
-    border: 1px solid #e1e5e9;
+    border: 1px solid var(--input-border);
     min-height: 40px;
     white-space: pre-wrap;
 }
 
 .quantity-badge {
-    background: #28a745;
+    background: var(--success-color);
     color: white;
     padding: 4px 12px;
     border-radius: 20px;
@@ -213,18 +213,18 @@
 }
 
 .quantity-badge.low-stock {
-    background: #dc3545;
+    background: var(--danger-color);
 }
 
 .item-actions-section {
-    background: #f8f9fa;
+    background: var(--bg-secondary);
     border-radius: 12px;
     padding: 20px;
-    border-left: 4px solid #28a745;
+    border-left: 4px solid var(--success-color);
 }
 
 .item-actions-section h3 {
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 15px;
     font-size: 1.1rem;
     display: flex;
@@ -233,7 +233,7 @@
 }
 
 .item-actions-section h3 i {
-    color: #28a745;
+    color: var(--success-color);
 }
 
 .action-buttons {
@@ -276,21 +276,21 @@
     display: none; /* shown only when available */
     margin: 10px auto 20px auto;
     padding: 12px 32px;
-    background: linear-gradient(90deg, #7f53ac 0%, #647dee 100%);
-    color: #fff;
+    background: var(--gradient-primary);
+    color: white;
     border: none;
     border-radius: 30px;
     font-size: 1.1rem;
     font-weight: 600;
-    box-shadow: 0 2px 8px rgba(100, 125, 222, 0.15);
+    box-shadow: 0 2px 8px var(--shadow-light);
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
     outline: none;
 }
 .install-btn:hover, .install-btn:focus {
-    background: linear-gradient(90deg, #647dee 0%, #7f53ac 100%);
+    background: var(--gradient-secondary);
     transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 4px 16px rgba(100, 125, 222, 0.18);
+    box-shadow: 0 4px 16px var(--shadow-medium);
 }
 </style>
 </head>
@@ -421,17 +421,17 @@
 
             <!-- Wishlist Modal -->
             <div id="wishlistModal" class="modal">
-                <div class="modal-content modal-lg" style="max-width: 1200px; margin: 40px auto;">
-                    <div class="modal-header" style="border-radius: 12px 12px 0 0; background: linear-gradient(90deg, #7f53ac 0%, #647dee 100%); color: #fff;">
+                <div class="modal-content modal-lg" style="max-width: 2000px; margin: 40px auto;">
+                    <div class="modal-header" style="border-radius: 12px 12px 0 0; background: var(--gradient-primary); color: white;">
                         <h2 style="margin:0;">Wishlist</h2>
-                        <span class="close" id="closeWishlistModal" style="color:#fff; font-size:2rem; cursor:pointer;">&times;</span>
+                        <span class="close" id="closeWishlistModal" style="color: white; font-size:2rem; cursor:pointer;">&times;</span>
                     </div>
-                    <div class="form-body" style="padding: 32px 24px 24px 24px; background: #fff; border-radius: 0 0 12px 12px;">
+                    <div class="form-body" style="padding: 32px 24px 24px 24px; background: var(--modal-content-bg); border-radius: 0 0 12px 12px;">
                         <form id="wishlistForm" style="display: flex; flex-direction: column; gap: 16px; align-items: stretch; max-width: 400px; margin: 0 auto;">
-                            <input type="text" id="wishlistProductName" name="wishlistProductName" placeholder="Product Name" required style="padding:10px; border-radius:6px; border:1px solid #ccc;">
-                            <input type="number" id="wishlistQuantity" name="wishlistQuantity" placeholder="Quantity" min="1" required style="padding:10px; border-radius:6px; border:1px solid #ccc;">
-                            <input type="text" id="wishlistPurpose" name="wishlistPurpose" placeholder="Purpose" required style="padding:10px; border-radius:6px; border:1px solid #ccc;">
-                            <input type="url" id="wishlistProductLink" name="wishlistProductLink" placeholder="Product Link (optional)" style="padding:10px; border-radius:6px; border:1px solid #ccc;">
+                            <input type="text" id="wishlistProductName" name="wishlistProductName" placeholder="Product Name" required style="padding:10px; border-radius:6px; border:1px solid var(--input-border); background: var(--input-background); color: var(--text-color);">
+                            <input type="number" id="wishlistQuantity" name="wishlistQuantity" placeholder="Quantity" min="1" required style="padding:10px; border-radius:6px; border:1px solid var(--input-border); background: var(--input-background); color: var(--text-color);">
+                            <input type="text" id="wishlistPurpose" name="wishlistPurpose" placeholder="Purpose" required style="padding:10px; border-radius:6px; border:1px solid var(--input-border); background: var(--input-background); color: var(--text-color);">
+                            <input type="url" id="wishlistProductLink" name="wishlistProductLink" placeholder="Product Link (optional)" style="padding:10px; border-radius:6px; border:1px solid var(--input-border); background: var(--input-background); color: var(--text-color);">
                             <div style="display:flex; gap:10px;">
                                 <button type="submit" class="btn btn-primary" style="flex:1; margin-top:8px;">Add to Wishlist</button>
                                 <button type="button" class="btn btn-secondary" id="cancelWishlistBtn" style="flex:1; margin-top:8px;">Cancel</button>
@@ -812,6 +812,9 @@
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+    
+    <!-- Theme Manager -->
+    <script src="theme-manager.js"></script>
 
     <!-- Notification Container -->
     <div id="notificationContainer" class="notification-container"></div>
