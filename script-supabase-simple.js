@@ -101,6 +101,8 @@ function updateWishlistDisplay() {
             </td>
         </tr>
     `).join('');
+}
+
 // Migrate wishlist item to inventory
 async function migrateWishlistToInventory(wishlistId) {
     // Ensure wishlist is up-to-date and id types match
@@ -161,11 +163,36 @@ async function migrateWishlistToInventory(wishlistId) {
 
 // Add to Wishlist from Inventory (must be global)
 window.addToWishlistFromInventory = async function(itemId) {
+    console.log('addToWishlistFromInventory called with itemId:', itemId);
+    console.log('Current inventory:', inventory);
+    
     const item = inventory.find(inv => inv.item_id === itemId);
     if (!item) {
+        console.error('Item not found for ID:', itemId);
+        console.error('Available items:', inventory.map(i => i.item_id));
         showNotification('Item not found', 'error');
         return;
     }
+    
+    console.log('Found item:', item);
+    
+    // Check if wishlist modal elements exist
+    const wishlistForm = document.getElementById('wishlistForm');
+    const wishlistModal = document.getElementById('wishlistModal');
+    const productNameField = document.getElementById('wishlistProductName');
+    
+    console.log('Modal elements check:', {
+        wishlistForm: !!wishlistForm,
+        wishlistModal: !!wishlistModal,
+        productNameField: !!productNameField
+    });
+    
+    if (!wishlistForm || !wishlistModal || !productNameField) {
+        console.error('Wishlist modal elements not found');
+        showNotification('Wishlist modal not properly initialized', 'error');
+        return;
+    }
+    
     // Open wishlist modal prefilled with item name and quantity 1
     document.getElementById('wishlistForm').reset();
     document.getElementById('wishlistProductName').value = item.item;
@@ -173,11 +200,14 @@ window.addToWishlistFromInventory = async function(itemId) {
     document.getElementById('wishlistPurpose').value = item.description || '';
     document.getElementById('wishlistProductLink').value = '';
     document.getElementById('wishlistModal').style.display = 'block';
+    console.log('Wishlist modal should now be visible');
 };
 
 // Expose migrateWishlistToInventory globally for inline onclick
 window.migrateWishlistToInventory = migrateWishlistToInventory;
-}
+
+// Expose deleteWishlistItem globally for inline onclick
+window.deleteWishlistItem = deleteWishlistItem;
 
 // Save wishlist item (add)
 async function saveWishlistItem(formData) {
@@ -1795,6 +1825,7 @@ function setupItemDetailsActions(itemId) {
     const removeStockBtn = document.getElementById('detailRemoveStockBtn');
     const relocateBtn = document.getElementById('detailRelocateBtn');
     const deleteBtn = document.getElementById('detailDeleteBtn');
+    const addToWishlistBtn = document.getElementById('detailAddToWishlistBtn');
     
     // Clone to remove old event listeners
     const newEditBtn = editBtn.cloneNode(true);
@@ -1802,12 +1833,14 @@ function setupItemDetailsActions(itemId) {
     const newRemoveStockBtn = removeStockBtn.cloneNode(true);
     const newRelocateBtn = relocateBtn.cloneNode(true);
     const newDeleteBtn = deleteBtn.cloneNode(true);
+    const newAddToWishlistBtn = addToWishlistBtn.cloneNode(true);
     
     editBtn.parentNode.replaceChild(newEditBtn, editBtn);
     addStockBtn.parentNode.replaceChild(newAddStockBtn, addStockBtn);
     removeStockBtn.parentNode.replaceChild(newRemoveStockBtn, removeStockBtn);
     relocateBtn.parentNode.replaceChild(newRelocateBtn, relocateBtn);
     deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+    addToWishlistBtn.parentNode.replaceChild(newAddToWishlistBtn, addToWishlistBtn);
     
     // Add new event listeners
     newEditBtn.onclick = () => {
@@ -1833,6 +1866,11 @@ function setupItemDetailsActions(itemId) {
     newDeleteBtn.onclick = () => {
         closeModal('itemDetailsModal');
         deleteItem(itemId);
+    };
+
+    newAddToWishlistBtn.onclick = () => {
+        closeModal('itemDetailsModal');
+        addToWishlistFromInventory(itemId);
     };
 }
 
@@ -1959,10 +1997,23 @@ function testLogin() {
     });
 }
 
-// Make testLogin global for debugging
+// Make test function global
 window.testLogin = testLogin;
 
-// Test function to check if the save button works
+// Add a test function for wishlist functionality
+window.testWishlistFunction = function() {
+    console.log('Testing wishlist function...');
+    console.log('addToWishlistFromInventory function exists:', typeof window.addToWishlistFromInventory);
+    console.log('Current inventory length:', inventory.length);
+    if (inventory.length > 0) {
+        console.log('Testing with first item:', inventory[0].item_id);
+        window.addToWishlistFromInventory(inventory[0].item_id);
+    } else {
+        console.log('No inventory items to test with');
+    }
+};
+
+// Additional debugging for login issues
 function testSaveItem() {
     console.log('Test save item function called');
     
