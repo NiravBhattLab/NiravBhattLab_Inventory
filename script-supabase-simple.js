@@ -1,7 +1,7 @@
 // Supabase Configuration
 const SUPABASE_CONFIG = {
-    url: 'https://bhaexzjmspamqxcszkgm.supabase.co',
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoYWV4emptc3BhbXF4Y3N6a2dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NjQ3MjEsImV4cCI6MjA2NzE0MDcyMX0.vCYNKtOp6phSWEK36XYNqL6DznS5pw_49QduBfUvckk'
+    url: 'https://ixnjqaciadxceccrbzkg.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bmpxYWNpYWR4Y2VjY3JiemtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzNTgyMTksImV4cCI6MjA3MTkzNDIxOX0.vMBc_SJN3UnJ7dglhywbqH7dCcXvT_FYA2PaShT5BuI'
 };
 
 // Initialize Supabase
@@ -2057,4 +2057,5 @@ document.addEventListener('DOMContentLoaded', function() {
     runDiagnostics();
     debugLogin();
     initializeApp();
+
 });
